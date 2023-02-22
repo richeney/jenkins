@@ -7,6 +7,10 @@ pipeline{
         TF_HOME = tool('terraform')
         TF_IN_AUTOMATION = "true"
         PATH = "$TF_HOME:$PATH"
+
+        ARM_BACKEND_RESOURCEGROUP = "jenkins"
+        ARM_BACKEND_STORAGEACCOUNT = credentials("ARM_BACKEND_STORAGEACCOUNT")
+        ARM_TENANT_ID = credentials("ARM_TENANT_ID")
     }
     stages {
 
