@@ -22,5 +22,6 @@ pipeline{
                 echo "ARM_BACKEND_RESOURCEGROUP: ${env.ARM_BACKEND_RESOURCEGROUP}"
                 echo "ARM_BACKEND_STORAGEACCOUNT: ${env.ARM_BACKEND_STORAGEACCOUNT}"
             }
+        }
     }
 }
