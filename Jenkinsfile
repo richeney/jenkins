@@ -16,6 +16,8 @@ pipeline{
 
     environment {
         TF_IN_AUTOMATION = "true"
+        ARM_TENANT_ID = credentials("ARM_TENANT_ID")
+        ARM_CLIENT_ID = credentials("Jenkins")
         ARM_BACKEND_RESOURCEGROUP = "${params.resource_group}"
         ARM_BACKEND_STORAGEACCOUNT = credentials("ARM_BACKEND_STORAGEACCOUNT")
     }
@@ -32,6 +34,8 @@ pipeline{
             steps {
                 sh '''
                 az login --identity --output jsonc
+                az resource list --resource-group $ARM_BACKEND_RESOURCEGROUP --output table
+
                 echo "ARM_BACKEND_RESOURCEGROUP: $ARM_BACKEND_RESOURCEGROUP"
                 echo "ARM_BACKEND_STORAGEACCOUNT: $ARM_BACKEND_STORAGEACCOUNT"
                 '''
