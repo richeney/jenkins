@@ -9,6 +9,10 @@ pipeline{
         "org.jenkinsci.plugins.terraform.TerraformInstallation" "terraform"
     }
 
+    parameters {
+        string(name: 'Greeting', defaultValue: 'Hello', description: 'How should I greet the world?')
+    }
+
     environment {
         // TF_HOME = tool('terraform')
         TF_IN_AUTOMATION = "true"
@@ -19,12 +23,18 @@ pipeline{
 
     stages {
 
-        stage('Test'){
+        stage('Info') {
+            steps {
+                echo "${params.Greeting}, running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
+            }
+        }
+
+        stage('Authenticate'){
             steps {
                 sh '''
                 az login --identity --output jsonc
-                echo "ARM_BACKEND_RESOURCEGROUP: ${env.ARM_BACKEND_RESOURCEGROUP}"
-                echo "ARM_BACKEND_STORAGEACCOUNT: ${env.ARM_BACKEND_STORAGEACCOUNT}"
+                echo "ARM_BACKEND_RESOURCEGROUP: $ARM_BACKEND_RESOURCEGROUP"
+                echo "ARM_BACKEND_STORAGEACCOUNT: $ARM_BACKEND_STORAGEACCOUNT"
                 '''
             }
         }
