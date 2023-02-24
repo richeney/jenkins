@@ -41,6 +41,7 @@ pipeline{
         stage('Terraform Init'){
             steps {
                 sh '''
+                az login --identity --output yaml
                 terraform init \
                   --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
                   --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
@@ -50,25 +51,25 @@ pipeline{
 
         stage('Terraform Validate'){
             steps {
-                sh 'terraform validate'
+                sh 'az login --identity --output table; terraform validate'
             }
         }
 
         stage('Terraform Format'){
             steps {
-                sh 'terraform fmt -check'
+                sh 'az login --identity --output none && terraform fmt -check'
             }
         }
 
         stage('Terraform Plan'){
             steps {
-                sh 'terraform plan --input=false'
+                sh 'az login --identity --output none && terraform plan --input=false'
             }
         }
 
         stage('Terraform Apply'){
             steps {
-                sh 'terraform apply --auto-approve --input=false'
+                sh 'az login --identity --output none && terraform apply --auto-approve --input=false'
             }
         }
     }
