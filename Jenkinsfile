@@ -21,11 +21,11 @@ pipeline{
 
         stage('Test'){
             steps {
-                sh """
+                sh '''
                 az login --identity --output jsonc
                 echo "ARM_BACKEND_RESOURCEGROUP: ${env.ARM_BACKEND_RESOURCEGROUP}"
                 echo "ARM_BACKEND_STORAGEACCOUNT: ${env.ARM_BACKEND_STORAGEACCOUNT}"
-                """
+                '''
             }
         }
 
