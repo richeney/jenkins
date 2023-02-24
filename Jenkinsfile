@@ -10,14 +10,13 @@ pipeline{
     }
 
     parameters {
-        string(name: 'Greeting', defaultValue: 'Hello', description: 'How should I greet the world?')
+        string(name: 'greeting', defaultValue: 'Hello', description: 'How should I greet the world?')
+        string(name: 'resource_group', defaultValue: 'jenkins', description: 'Azure Resource Group Name')
     }
 
     environment {
-        // TF_HOME = tool('terraform')
         TF_IN_AUTOMATION = "true"
-        // PATH = "$TF_HOME:$PATH"
-        ARM_BACKEND_RESOURCEGROUP = "jenkins"
+        ARM_BACKEND_RESOURCEGROUP = "${params.resource_group}"
         ARM_BACKEND_STORAGEACCOUNT = credentials("ARM_BACKEND_STORAGEACCOUNT")
     }
 
@@ -25,7 +24,7 @@ pipeline{
 
         stage('Info') {
             steps {
-                echo "${params.Greeting}, running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
+                echo "${params.greeting}, running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
             }
         }
 
@@ -39,5 +38,38 @@ pipeline{
             }
         }
 
+        stage('Terraform Init'){
+            steps {
+                sh '''
+                terraform init \
+                  --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
+                  --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
+                '''
+            }
+        }
+
+        stage('Terraform Validate'){
+            steps {
+                sh 'terraform validate'
+            }
+        }
+
+        stage('Terraform Format'){
+            steps {
+                sh 'terraform fmt -check'
+            }
+        }
+
+        stage('Terraform Plan'){
+            steps {
+                sh 'terraform plan --input=false'
+            }
+        }
+
+        stage('Terraform Apply'){
+            steps {
+                sh 'terraform apply --auto-approve --input=false'
+            }
+        }
     }
 }
