@@ -25,73 +25,48 @@ pipeline {
             }
         }
 
-        stage('deploy') {
-            steps {
-                sh '''
-                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID
-                az account set --subscription $ARM_SUBSCRIPTION_ID
-                location=$(az group show --name $ARM_BACKEND_RESOURCEGROUP --query location --output tsv)
-                az group create --name whatever --location $location
-                az logout
-                '''
-            }
-        }
-/*
-
-        stage('Example Azure CLI stage with Azure CLI plugin') {
-            steps {
-                azureCLI principalCredentialId: 'jenkins',
-                commands: [
-                    [
-                        script: 'az account show --output jsonc',
-                        exportVariablesString: '/name|ARM_SUBSCRIPTION_NAME'
-                    ],
-                    [
-                        script: 'echo "ARM_SUBSCRIPTION_NAME: $ARM_SUBSCRIPTION_NAME"',
-                    ]
-                    ]
-            }
-        }
-
-        stage('Example Azure CLI stage using withCredentials') {
-            steps {
-                withCredentials([azureServicePrincipal('jenkins')]) {
-                    // Default env vars: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID
-                    sh 'az account show --output jsonc'
-                    sh 'az storage account list --resource-group $ARM_BACKEND_STORAGEACCOUNT --output jsonc'
-                }
-            }
-        }
-
         stage('Terraform Init') {
             steps {
-                withCredentials([azureServicePrincipal(
-                        credentialsId: 'jenkins',
-                        subscriptionIdVariable: 'ARM_SUBSCRIPTION_ID',
-                        clientIdVariable: 'ARM_CLIENT_ID',
-                        tenantIdVariable: 'ARM_TENANT_ID'
-                        )]) {
-                    sh '''
-                    echo "Initialising Terraform"
-                    terraform init \
-                      --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
-                      --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
-                    '''
-                        }
+                sh '''
+                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
+                az account set --subscription $ARM_SUBSCRIPTION_ID
+
+                echo "Initialising Terraform"
+                terraform init \
+                    --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
+                    --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
+
+                az logout
+                '''
             }
         }
 
         stage('Terraform Validate') {
             steps {
-                withCredentials([azureServicePrincipal('jenkins')]) {
-                    sh('echo "Validating Terraform"; terraform validate')
-                }
+                sh '''
+                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
+                az account set --subscription $ARM_SUBSCRIPTION_ID --output none
+
+                echo "Validating Terraform"
+                terraform fmt -check
+                terraform validate
+
+                az logout
+                '''
             }
         }
 
-        stage('Terraform Plan') {
+        stage('Terraform {Plan}') {
             steps {
-                sh('terraform plan --input=false')
+                sh '''
+                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
+                az account set --subscription $ARM_SUBSCRIPTION_ID --output none
+
+                echo "Validating Terraform"
+                terraform plan --input=false
+
+                az logout
+                '''
             }
         }
 
@@ -105,9 +80,16 @@ pipeline {
 
         stage('Terraform Apply') {
             steps {
-                sh 'terraform apply --auto-approve --input=false'
+                sh '''
+                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
+                az account set --subscription $ARM_SUBSCRIPTION_ID --output none
+
+                echo "Validating Terraform"
+                terraform apply --input=false --auto-approve
+
+                az logout
+                '''
             }
         }
-*/
     }
 }
