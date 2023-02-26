@@ -2,9 +2,9 @@
 
 Jenkins is a popular CI/CD tool. This example shows the creation of a Jenkins server with a service principal and both Azure CLI and Terraform installed.
 
-Currently using credentials and secrets in Jenkins. Later will update with Azure Key Vault integration.
-
 Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), plus access to a valid subscription.
+
+The terraform config should create a resource group, *terraform-demo*, and an Azure Container Instance running the inspector gadget image, but this is purely to prove that your Terraform configuration can be deployed via Jenkins using a GitHub repo and an Azure Service Principal.
 
 ## Deploy a Jenkins server
 
@@ -132,28 +132,45 @@ Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/
     1. Click on *Available plugins*
     1. Search on the following plug-ins in turn
         * AnsiColor
-        * Azure CLI
         * Azure Credentials
-        * Azure Credentials Ext
-        * Azure Key Vault
         * Terraform
+        * Azure Key Vault (optional)
+        * Dark Theme (optional)
 
     1. Check and *Install without restart*
 
-        ![Selecting plugins for installation in Jenkins](images/plugins.png)
+1. Restart Jenkins
 
-    1. Scroll down and check *Restart Jenkins when installation is complete and no jobs are running*
+    Once they have all installed then restart Jenkins:
 
-    > You can also restart Jenkins using `http://<ip_address>:8080/restart` or `sudo service jenkins restart`.
+    * Browse to `http://<ip_address>:8080/restart`, or
+    * Run `sudo service jenkins restart`
+
+## Dark mode (optional)
+
+If you installed the Dark Theme plugin:
+
+1. Manage Jenkins | Configure System
+1. Scroll down to *Themes*
+1. Select your preferred theme
 
 ## Jenkins Tools
 
-Jenkins can install tools (binaries, etc) on the fly with automatic installers. We have installed Terraform manually via apt.
+Jenkins can install tools (binaries, etc) on the fly with automatic installers. We installed Terraform via apt and will use the `/usr/bin/terraform` binary.
 
 1. Manage Jenkins | Global Tool Configuration
 1. Scroll down to the Terraform section
 1. *Add Terraform*
     1. Name = **terraform**
+
+        For information, the name must match the second field in the Jenkinsfile tools block:
+
+        ```go
+        tools {
+            'org.jenkinsci.plugins.terraform.TerraformInstallation' 'terraform'
+        }
+        ```
+
     1. Install directory = **/usr/bin**
     1. Uncheck *Install automatically*
 
@@ -210,6 +227,8 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 
     ![Adding a Service Principal in Jenkins](images/service_principal.png)
 
+    If there are any issues then try to authenticate using `az login --service-principal`.
+
 1. *Create*
 
 ## Remote state
@@ -248,23 +267,122 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 
     These will be used later by `terraform init` for the backend.
 
+## Configure a pipeline
+
+### Create the Jenkins pipeline
+
+On the Jenkins dashboard:
+
+1. *+ New Item+
+1. Select *Pipeline"
+1. Enter an item name
+
+    ![Create a new pipeline](images/new_pipeline.png)
+
+1. Click OK
+
+    You will now be in the *Configure | General* screen for your pipeline.
+
+1. Scroll down to Build Triggers section
+1. Check *GitHub hook trigger for GITScm polling*
+
+    ![Check the GitHub hook trigger for GITScm polling option](images/add_github_hook_trigger.png)
+
+1. Scroll down further, to the Pipeline section
+1. Change the *Definition* dropdown to *Pipeline script from SCM*
+
+    ![Check the GitHub hook trigger for GITScm polling option](images/pipeline_script_from_scm.png)
+
+1. *SCM* should be set to *Git*
+1. In repository URL, add in the .git path to your repo
+1. Click on *Add Branch*
+1. Set the specifier, e.g. `*/main`
+
+    ![Pipeline configuration for SCM in Jenkins](images/pipeline_script_from_scm.png)
+
+    Note that there is a Jenkinsfile at the root of the repo, matching the default Script Path on the configuration.
+
+1. Save
+
+## Create the GitHub webhook
+
+In your clone of this [GitHub repo](https://github.com/richeney/jenkins):
+
+1. Settings | Webhooks
+1. Set the *Payload URL* to `http://<ip_address>:8080/github-webhook/`
+1. Set *Content type* to *application/json*
+
+    ![Add the webhook in GitHub](images/add_github_webhook.png)
+
+1. Click on *Add webhook*
+
+## Trigger the initial test build
+
+In Jenkins dashboard:
+
+1. Select your pipeline
+1. Click on *Build Now*
+
+    ![Click on Build Now to test your pipeline](images/build_now.png)
+
+    The pipeline view will start to show in the right hand pane.
+
+1. Approve the deployment
+
+    Assuming the Terraform Init, Terraform Validate and Terraform Plan stages have succeeded, you will be asked to approve the deployment. Feel free to view the log output of the Terraform Plan stage.
+
+    Hover over the *Waiting for approval* stage and you will get the option to *Proceed*.
+
+    ![Approve the deployment](images/approve_deployment.png)
+
+    The final Terraform Apply stage should create the resource group and container instance.
+
+    ![Showing the Inspector Gadget container instance overview in the Azure Portal](images/inspector_gadget.png)
+
+    Success!
+
 ## Next
 
 On the next page you will use the Azure CLI and the Cloud Shell to pull down an image into the container registry and you'll also create a virtual network.
 
 ## Resources
 
-* <https://learn.microsoft.com/azure/developer/jenkins/configure-on-linux-vm>
-* <https://plugins.jenkins.io/azure-cli/>
+* <https://www.jenkins.io/doc/book/pipeline/jenkinsfile/>
 * <https://plugins.jenkins.io/credentials/>
 * <https://plugins.jenkins.io/azure-credentials/>
+* <https://learn.microsoft.com/azure/developer/jenkins/configure-on-linux-vm>
 * <https://learn.microsoft.com/azure/developer/jenkins/deploy-to-azure-spring-apps-using-azure-cli>
 * <https://github.com/Azure-Samples/jenkins-terraform-azure-example/blob/main/Create_Jenkins_Job.md>
-* <https://github.com/Azure-Samples/azure-voting-app-redis>
-* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/managed_service_identity>
-* <https://www.jenkins.io/doc/book/pipeline/jenkinsfile/>
-* <https://www.genja.co.uk/blog/installing-jenkins-and-securing-the-traffic-with-tls-ssl/>
-* <https://github.com/smertan/jenkins>
+* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret>
 * <https://learn.microsoft.com/en-us/azure/load-balancer/howto-load-balancer-imds?tabs=linux>
 * <https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service?tabs=linux>
-* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret>
+* <https://www.cprime.com/resources/blog/how-to-integrate-jenkins-github/>
+
+## Resources to be explored for hardening
+
+Configure https:
+
+* <https://drtailor.medium.com/how-to-set-up-https-for-jenkins-with-a-self-signed-certificate-on-ubuntu-20-04-2813ef2df537>
+
+Configure secrets in Azure Key Vault:
+
+* <https://github.com/Azure-Samples/jenkins-terraform-azure-example/blob/main/Create_Jenkins_Job.md>
+
+Will also look at:
+
+* Using credentials to access a private GitHub repo
+* Removing the public IP and switching to Azure Bastion tunnels
+
+## Resources dismissed
+
+There is a lot of old information out there, and a number of plugins that are moving out of Microsoft support.
+
+* <https://learn.microsoft.com/en-us/azure/developer/jenkins/plug-ins-for-azure>
+
+Below is a list of resources that I explored and discounted as I believe that they are not on the recommended path, or they are now outdated. This includes anything to do with Jenkins and managed identity, which I don't believe is a working option. Very happy to be corrected!
+
+* <https://plugins.jenkins.io/azure-cli/>
+* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/managed_service_identity>
+* <https://github.com/Azure-Samples/azure-voting-app-redis>
+* <https://www.genja.co.uk/blog/installing-jenkins-and-securing-the-traffic-with-tls-ssl/>
+* <https://github.com/smertan/jenkins>
