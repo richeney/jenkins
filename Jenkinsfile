@@ -22,6 +22,11 @@ pipeline {
         stage('Info') {
             steps {
                 echo "Running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
+                echo "env.ARM_BACKEND_RESOURCEGROUP: ${env.ARM_BACKEND_RESOURCEGROUP}"
+                echo "ARM_BACKEND_RESOURCEGROUP: ${ARM_BACKEND_RESOURCEGROUP}"
+                echo "env.ARM_SUBSCRIPTION_ID: ${env.ARM_SUBSCRIPTION_ID}"
+                echo "ARM_SUBSCRIPTION_ID: ${ARM_SUBSCRIPTION_ID}"
+                echo "ARM_SUBSCRIPTION_ID: $ARM_SUBSCRIPTION_ID"
             }
         }
 

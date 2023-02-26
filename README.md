@@ -184,7 +184,7 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 1. Display the subscription ID
 
     ```bash
-    az account show --type id --output tsv
+    az account show --query id --output tsv
     ```
 
 1. Recreate the service principal
