@@ -22,11 +22,6 @@ pipeline {
         stage('Info') {
             steps {
                 echo "Running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
-                echo "env.ARM_BACKEND_RESOURCEGROUP: ${env.ARM_BACKEND_RESOURCEGROUP}"
-                echo "ARM_BACKEND_RESOURCEGROUP: ${ARM_BACKEND_RESOURCEGROUP}"
-                echo "env.ARM_SUBSCRIPTION_ID: ${env.ARM_SUBSCRIPTION_ID}"
-                echo "ARM_SUBSCRIPTION_ID: ${ARM_SUBSCRIPTION_ID}"
-                echo "ARM_SUBSCRIPTION_ID: $ARM_SUBSCRIPTION_ID"
             }
         }
 
@@ -35,7 +30,7 @@ pipeline {
                 sh '''
                 az login --service-principal \
                   --username $ARM_CLIENT_ID --password $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
-                az account set --subcription $ARM_SUBSCRIPTION_ID
+                az account set --subscription $ARM_SUBSCRIPTION_ID
                 '''
 
                 sh 'az config set defaults.group=jenkins default.location=uksouth'
