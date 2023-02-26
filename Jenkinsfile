@@ -30,10 +30,8 @@ pipeline {
                 sh '''
                 az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID
                 az account set --subscription $ARM_SUBSCRIPTION_ID
-
-                az config set defaults.group=jenkins default.location=uksouth
-                az group create --name whatever
-
+                location=$(az group show --name $ARM_BACKEND_RESOURCEGROUP --query location --output tsv)
+                az group create --name whatever --location $location
                 az logout
                 '''
             }
