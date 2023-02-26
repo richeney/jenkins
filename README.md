@@ -156,9 +156,30 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
     1. Name = **terraform**
     1. Install directory = **/usr/bin**
     1. Uncheck *Install automatically*
+
+        ![Add Terraform as a Jenkins tool](images/terraform.png)
 1. Save
 
 ## Credential
+
+1. Create a service principal
+
+    ```bash
+    az ad sp create-for-rbac --name http://jenkins_terraform_sp --output jsonc
+    ```
+
+1. Get the service principal's object ID
+
+    ```bash
+    objectId=$(az ad sp list --filter "displayname eq 'http://jenkins_terraform_sp'" --query [0].id -otsv)
+    ```
+
+1. Create Owner RBAC role assignment on the subscription
+
+    ```bash
+    subscriptionId=/subscriptions/$(az account show --query id -otsv)
+    az role assignment create --assignee $objectId --role "Contributor" --scope $subscriptionId
+    ```
 
 1. Display the subscription ID
 
@@ -166,10 +187,12 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
     az account show --type id --output tsv
     ```
 
-1. Create a service principal
+1. Recreate the service principal
+
+    This will patch it, resetting the password.
 
     ```bash
-    az ad sp create-for-rbac --name jenkins --output jsonc
+    az ad sp create-for-rbac --name http://jenkins_terraform_sp --output jsonc
     ```
 
 1. Manage Jenkins | Manage Credentials
@@ -181,22 +204,13 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
     * **Client ID** (appId)
     * **Client Secret** (password)
     * **Tenant ID**
-    * Id = **Jenkins**
+    * Id = **jenkins_terraform_sp**
+    * Description = **ht<span>tp://</span>jenkins_terraform_sp**
+1. *Verify Service Principal*
 
-        ![Adding a Service Principal in Jenkins](images/service_principal.png)
+    ![Adding a Service Principal in Jenkins](images/service_principal.png)
 
-1. Get the service principal's object ID
-
-    ```bash
-    objectId=$(az ad sp list --filter "displayname eq 'jenkins'" --query [0].id -otsv)
-    ```
-
-1. Create Owner RBAC role assignment on the subscription
-
-    ```bash
-    subscriptionId=/subscriptions/$(az account show --query id -otsv)
-    az role assignment create --assignee $objectId --role "Contributor" --scope $subscriptionId
-    ```
+1. *Create*
 
 ## Remote state
 
@@ -207,7 +221,6 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
     sa=terraform$(md5sum <<< $rgId | cut -c1-12)
     az storage account create --name $sa --sku Standard_LRS --allow-blob-public-access false
     az storage container create --name "tfstate" --account-name $sa --auth-mode login
-
     ```
 
     Uses md5sum to generate a predictable hash from the resource group's resource ID.

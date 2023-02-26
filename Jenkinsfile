@@ -7,9 +7,9 @@ pipeline {
 
     environment {
         TF_IN_AUTOMATION = 'true'
-        ARM = credentials('jenkins')
+        ARM = credentials('jenkins_terraform_sp')
         // Exports env vars: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID
-        // Same as those used by Terraform
+        // which is the same as those used by Terraform
         ARM_BACKEND_RESOURCEGROUP = credentials('resource_group')
         ARM_BACKEND_STORAGEACCOUNT = credentials('storage_account')
     }
