@@ -153,8 +153,8 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 1. Manage Jenkins | Global Tool Configuration
 1. Scroll down to the Terraform section
 1. *Add Terraform*
-    1. Name = Terraform
-    1. Install directory =
+    1. Name = **terraform**
+    1. Install directory = **/usr/bin**
     1. Uncheck *Install automatically*
 1. Save
 
@@ -234,11 +234,6 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
     ![Adding additional secrets in Jenkins](images/secret.png)
 
     These will be used later by `terraform init` for the backend.
-
-
-
-
-
 
 ## Next
 

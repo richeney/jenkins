@@ -25,6 +25,21 @@ pipeline {
             }
         }
 
+        stage('Example Azure CLI stage with Azure CLI plugin') {
+            steps {
+                azureCLI principalCredentialId: 'jenkins',
+                commands: [
+                    [
+                        script: 'az account show --output jsonc',
+                        exportVariablesString: '/name|ARM_SUBSCRIPTION_NAME'
+                    ],
+                    [
+                        script: 'echo "ARM_SUBSCRIPTION_NAME: $ARM_SUBSCRIPTION_NAME"',
+                    ]
+                    ]
+            }
+        }
+/*
         stage('Example Azure CLI stage using withCredentials') {
             steps {
                 withCredentials([azureServicePrincipal('jenkins')]) {
@@ -32,21 +47,6 @@ pipeline {
                     sh 'az account show --output jsonc'
                     sh 'az storage account list --resource-group $ARM_BACKEND_STORAGEACCOUNT --output jsonc'
                 }
-            }
-        }
-
-        stage('Example Azure CLI stage with Azure CLI plugin') {
-            steps {
-                azureCLI principalCredentialId: 'jenkins',
-                commands: [
-                    [
-                        script: 'az account show --output jsonc'
-                        ],
-                    [
-                         exportVariablesString: '/publicIpAddress|PUBLIC_IP',
-                     script: 'az vm create -n MyLinuxVM -g MyResourceGroup --image UbuntuLTS --data-disk-sizes-gb 10 20'
-                    ]
-                    ]
             }
         }
 
@@ -64,7 +64,7 @@ pipeline {
                       --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
                       --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
                     '''
-                }
+                        }
             }
         }
 
@@ -96,4 +96,5 @@ pipeline {
             }
         }
     }
+*/
 }
