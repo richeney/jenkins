@@ -39,6 +39,7 @@ pipeline {
                     ]
             }
         }
+
 /*
         stage('Example Azure CLI stage using withCredentials') {
             steps {
@@ -95,6 +96,6 @@ pipeline {
                 sh 'terraform apply --auto-approve --input=false'
             }
         }
-    }
 */
+    }
 }
