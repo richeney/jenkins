@@ -27,16 +27,15 @@ pipeline {
 
         stage('deploy') {
             steps {
-                withCredentials([azureServicePrincipal('jenkins')]) {
-                    sh '''
-                    az login --service-principal \
-                      --username $ARM_CLIENT_ID --password $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
-                    az account set --subcription $ARM_SUBSCRIPTION_ID
-                    '''
-                    sh 'az config set defaults.group=jenkins default.location=uksouth'
-                    sh 'az group create --name whatever'
-                    sh 'az logout'
-                }
+                sh '''
+                az login --service-principal \
+                  --username $ARM_CLIENT_ID --password $ARM_CLIENT_SECRET --tenant $ARM_TENANT_ID
+                az account set --subcription $ARM_SUBSCRIPTION_ID
+                '''
+
+                sh 'az config set defaults.group=jenkins default.location=uksouth'
+                sh 'az group create --name whatever'
+                sh 'az logout'
             }
         }
 /*
