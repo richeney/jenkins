@@ -26,10 +26,12 @@ pipeline {
         }
 
         stage('Example Azure CLI stage using withCredentials') {
-            withCredentials([azureServicePrincipal('jenkins')]) {
-                // Default env vars: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID
-                sh 'az account show --output jsonc'
-                sh 'az storage account list --resource-group $ARM_BACKEND_STORAGEACCOUNT --output jsonc'
+            steps {
+                withCredentials([azureServicePrincipal('jenkins')]) {
+                    // Default env vars: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID
+                    sh 'az account show --output jsonc'
+                    sh 'az storage account list --resource-group $ARM_BACKEND_STORAGEACCOUNT --output jsonc'
+                }
             }
         }
 
@@ -56,42 +58,42 @@ pipeline {
                         clientIdVariable: 'ARM_CLIENT_ID',
                         tenantIdVariable: 'ARM_TENANT_ID'
                         )]) {
-                        sh '''
-                        echo "Initialising Terraform"
-                        terraform init \
-                          --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
-                          --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
-                        '''
-                        }
+                    sh '''
+                    echo "Initialising Terraform"
+                    terraform init \
+                      --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
+                      --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
+                    '''
+                }
             }
         }
 
         stage('Terraform Validate') {
             steps {
                 withCredentials([azureServicePrincipal('jenkins')]) {
-                        sh('echo "Initialising Terraform"; terraform validate')
-                        }
+                    sh('echo "Validating Terraform"; terraform validate')
                 }
             }
+        }
 
-            stage('Terraform Plan') {
-                steps {
-                    sh 'az login --identity --output none && terraform plan --input=false'
-                }
+        stage('Terraform Plan') {
+            steps {
+                sh('terraform plan --input=false')
             }
+        }
 
-            stage('Waiting for approval...') {
-                steps {
-                    timeout(time: 10, unit: 'MINUTES') {
+        stage('Waiting for approval...') {
+            steps {
+                timeout(time: 10, unit: 'MINUTES') {
                         input(message: 'Deploy the infrastructure?')
-                    }
                 }
             }
+        }
 
-            stage('Terraform Apply') {
-                steps {
-                    sh 'az login --identity --output none && terraform apply --auto-approve --input=false'
-                }
+        stage('Terraform Apply') {
+            steps {
+                sh 'terraform apply --auto-approve --input=false'
             }
+        }
     }
 }
