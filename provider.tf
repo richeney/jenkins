@@ -8,7 +8,6 @@ terraform {
   }
 
   backend "azurerm" {
-    use_oidc = true
     # tenant_id            = // ARM_TENANT_ID, defaults to the user's tenant
     # subscription_id      = // ARM_SUBSCRIPTION_ID, defaults to the user's subscription
     # resource_group_name  = Set in the workflow with --backend-config
@@ -23,6 +22,6 @@ provider "azurerm" {
   # tenant_id           = // ARM_TENANT_ID, defaults to the user's tenant
   # subscription_id     = // ARM_SUBSCRIPTION_ID, defaults to the user's subscription
   # client_id           = // ARM_CLIENT_ID, defaults to the client of the user running the command
-  use_msi             = true
+  # client_secret           = // ARM_CLIENT_SECRET, defaults to the client of the user running the command
   storage_use_azuread = true
 }

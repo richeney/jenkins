@@ -2,11 +2,15 @@
 
 Jenkins is a popular CI/CD tool. This example shows the creation of a Jenkins server with a service principal and both Azure CLI and Terraform installed.
 
-WIll use secrets in Jeknins. Later will update with Azure Key Vault integration.
+Currently using credentials and secrets in Jenkins. Later will update with Azure Key Vault integration.
+
+Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), plus access to a valid subscription.
 
 ## Deploy a Jenkins server
 
 1. Create cloud-config.yaml
+
+    Create a cloud-config.yaml file with the following contents.
 
     ```yaml
     #cloud-config
@@ -31,8 +35,6 @@ WIll use secrets in Jeknins. Later will update with Azure Key Vault integration.
     * terraform
     * azure-cli
     * jq
-
-    and their pre-reqs, keys, etc.
 
 1. Set your default region and resource group
 
@@ -63,17 +65,6 @@ WIll use secrets in Jeknins. Later will update with Azure Key Vault integration.
     --custom-data cloud-init-jenkins-terraform-azurecli.txt \
     --assign-identity [system]
     ```
-
-1. Create a storage account and container for the Terraform remote state
-
-    ```bash
-    sa=terraform$(az group show --name $(az config get defaults.group --query value -otsv) --query id -otsv | md5sum | cut -c1-12)
-    az storage account create --name $sa --sku Standard_LRS --allow-blob-public-access false
-    az storage container create --name "tfstate" --account-name $sa --auth-mode login
-    saId=$(az storage account show --name $sa --query id -otsv)
-    ```
-
-    Uses md5sum to generate a predictable hash from the resource group's resource ID.
 
 1. Open port 8080 and 8443 on the NSG
 
@@ -147,7 +138,11 @@ WIll use secrets in Jeknins. Later will update with Azure Key Vault integration.
         * Azure Credentials Ext
         * Azure Key Vault
         * Terraform
+
     1. Check and *Install without restart*
+
+        ![Selecting plugins for installation in Jenkins](images/plugins.png)
+
     1. Scroll down and check *Restart Jenkins when installation is complete and no jobs are running*
 
     > You can also restart Jenkins using `http://<ip_address>:8080/restart` or `sudo service jenkins restart`.
@@ -189,18 +184,62 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
     * **Tenant ID**
     * Id = **Jenkins**
 
+        ![Adding a Service Principal in Jenkins](images/service_principal.png)
+
 1. Get the service principal's object ID
 
     ```bash
     objectId=$(az ad sp list --filter "displayname eq 'jenkins'" --query [0].id -otsv)
     ```
 
-1. Create RBAC role assignment for Owner on the subscription
+1. Create Owner RBAC role assignment on the subscription
 
     ```bash
     subscriptionId=/subscriptions/$(az account show --query id -otsv)
     az role assignment create --assignee $objectId --role "Contributor" --scope $subscriptionId
     ```
+
+## Remote state
+
+1. Create a storage account and container for the Terraform remote state
+
+    ```bash
+    rgId=$(az group show --name $(az config get defaults.group --query value -otsv) --query id -otsv)
+    sa=terraform$(md5sum <<< $rgId | cut -c1-12)
+    az storage account create --name $sa --sku Standard_LRS --allow-blob-public-access false
+    az storage container create --name "tfstate" --account-name $sa --auth-mode login
+
+    ```
+
+    Uses md5sum to generate a predictable hash from the resource group's resource ID.
+
+1. Add Storage Blob Data Contributor RBAC role assignment
+
+    ```bash
+    saId=$(az storage account show --name $sa --query id -otsv)
+    az role assignment create --assignee $objectId --role "Storage Blob Data Contributor" --scope $saId
+    ```
+
+1. Display resource group name and storage account name
+
+    ```bash
+    az storage account show --name $sa --query "{resource_group:resourceGroup, storage_account:name}" --output yaml
+    ```
+
+1. Manage Jenkins | Manage Credentials
+1. *System*, *Global credentials*, *+ Add Credentials*
+1. Kind = **Secret text**
+
+    Create two credentials, for **resource_group** and **storage_account**.
+
+    ![Adding additional secrets in Jenkins](images/secret.png)
+
+    These will be used later by `terraform init` for the backend.
+
+
+
+
+
 
 ## Next
 
@@ -221,22 +260,4 @@ On the next page you will use the Azure CLI and the Cloud Shell to pull down an 
 * <https://github.com/smertan/jenkins>
 * <https://learn.microsoft.com/en-us/azure/load-balancer/howto-load-balancer-imds?tabs=linux>
 * <https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service?tabs=linux>
-
-
-
-
-1. Create a service principal
-
-1. Find the objectId for the managed identity
-
-    ```bash
-    managed_identity=$(az vm show --resource-group jenkins --name jenkins --query identity.principalId --output tsv)
-    ```
-
-1. Assign RBAC roles for the managed identity
-
-    ```bash
-    subscriptionId=/subscriptions/$(az account show --query id --output tsv)
-    az role assignment create --assignee $managed_identity --role "Contributor" --scope $subscriptionId
-    az role assignment create --assignee $managed_identity --role "Storage Blob Data Contributor" --scope $saId
-    ```
+* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret>
