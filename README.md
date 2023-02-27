@@ -6,6 +6,10 @@ Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/
 
 The terraform config should create a resource group, *terraform-demo*, and an Azure Container Instance running the inspector gadget image, but this is purely to prove that your Terraform configuration can be deployed via Jenkins using a GitHub repo and an Azure Service Principal.
 
+## Forking
+
+Before you start, fork this repo so that you have your own.
+
 ## Deploy a Jenkins server
 
 1. Create cloud-config.yaml
@@ -261,6 +265,9 @@ On the Jenkins dashboard:
 
 1. *SCM* should be set to *Git*
 1. In repository URL, add in the .git path to your repo
+
+    ⚠️ Your repo
+
 1. Click on *Add Branch*
 1. Set the specifier, e.g. `*/main`
 
@@ -270,21 +277,9 @@ On the Jenkins dashboard:
 
 1. Save
 
-## Create the GitHub webhook
-
-In your clone of this [GitHub repo](https://github.com/richeney/jenkins):
-
-1. Settings | Webhooks
-1. Set the *Payload URL* to `http://<ip_address>:8080/github-webhook/`
-1. Set *Content type* to *application/json*
-
-    ![Add the webhook in GitHub](images/add_github_webhook.png)
-
-1. Click on *Add webhook*
-
 ## Trigger the initial test build
 
-In Jenkins dashboard:
+Make sure the pipeline works before creating the GitHub webhook. In Jenkins dashboard:
 
 1. Select your pipeline
 1. Click on *Build Now*
@@ -303,9 +298,35 @@ In Jenkins dashboard:
 
     The final Terraform Apply stage should create the resource group and container instance.
 
+## Success
+
+1. Jenkins dashboard
+
+    The dashboard should now show a healthy pipeline run.
+
+    ![Healthy Jenkins dashboard](images/healthy_dashboard.png)
+
+1. Azure Portal
+
+    You should now have a resource group called terraform-demo containing the example container instance.
+
     ![Showing the Inspector Gadget container instance overview in the Azure Portal](images/inspector_gadget.png)
 
     Success!
+
+## Create the GitHub webhook
+
+In your clone of this [GitHub repo](https://github.com/richeney/jenkins):
+
+1. Settings | Webhooks
+1. Set the *Payload URL* to `http://<ip_address>:8080/github-webhook/`
+1. Set *Content type* to *application/json*
+
+    ![Add the webhook in GitHub](images/add_github_webhook.png)
+
+1. Click on *Add webhook*
+
+Feel free to locally clone your repo, make a change to the Jenkinsfile or Terraform files and then push that commit back up to the origin. This should trigger another build pipeline.
 
 ## Next
 
@@ -315,10 +336,11 @@ On the next page you will use the Azure CLI and the Cloud Shell to pull down an 
 
 * <https://www.jenkins.io/doc/book/pipeline/jenkinsfile/>
 * <https://plugins.jenkins.io/credentials/>
-* <https://plugins.jenkins.io/azure-credentials/>
 * <https://learn.microsoft.com/azure/developer/jenkins/configure-on-linux-vm>
 * <https://learn.microsoft.com/azure/developer/jenkins/deploy-to-azure-spring-apps-using-azure-cli>
 * <https://github.com/Azure-Samples/jenkins-terraform-azure-example/blob/main/Create_Jenkins_Job.md>
+* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/managed_service_identity>
+* <https://plugins.jenkins.io/azure-credentials/>
 * <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/service_principal_client_secret>
 * <https://learn.microsoft.com/en-us/azure/load-balancer/howto-load-balancer-imds?tabs=linux>
 * <https://learn.microsoft.com/en-us/azure/virtual-machines/instance-metadata-service?tabs=linux>
@@ -334,12 +356,6 @@ Configure secrets in Azure Key Vault:
 
 * <https://github.com/Azure-Samples/jenkins-terraform-azure-example/blob/main/Create_Jenkins_Job.md>
 
-OpenID Connect between AAD and Jenkins plugin:
-
-* <https://plugins.jenkins.io/oidc-provider/>
-
-    Documented for AWS and GCP - missing Azure.
-
 Will also look at:
 
 * Using credentials to access a private GitHub repo
@@ -351,10 +367,9 @@ There is a lot of old information out there, and a number of plugins that are mo
 
 * <https://learn.microsoft.com/en-us/azure/developer/jenkins/plug-ins-for-azure>
 
-Below is a list of resources that I explored and discounted as I believe that they are not on the recommended path, or they are now outdated. This includes anything to do with Jenkins and managed identity, which I don't believe is a working option. Very happy to be corrected!
+Below is a list of resources that I explored and discounted as I believe that they are not on the recommended path, or they are now outdated.
 
 * <https://plugins.jenkins.io/azure-cli/>
-* <https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/guides/managed_service_identity>
 * <https://github.com/Azure-Samples/azure-voting-app-redis>
 * <https://www.genja.co.uk/blog/installing-jenkins-and-securing-the-traffic-with-tls-ssl/>
 * <https://github.com/smertan/jenkins>
