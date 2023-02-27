@@ -4,7 +4,11 @@ Jenkins is a popular CI/CD tool. This example shows the creation of a Jenkins se
 
 Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), plus access to a valid subscription.
 
-The terraform config should create a resource group, *terraform-demo*, and an Azure Container Instance running the inspector gadget image, but this is purely to prove that your Terraform configuration can be deployed via Jenkins using a GitHub repo and an Azure Service Principal.
+The terraform config should create a resource group, *terraform-demo*, and an Azure Container Instance running the inspector gadget image, but this is purely to prove that your Terraform configuration can be deployed via Jenkins using a GitHub repo and a system assigned managed identity.
+
+The Jenkinsfile includes both Azure CLI and Terraform example steps.
+
+If you are prefer using service principals then check the companion [readme](SERVICE_PRINCIPAL.md).
 
 ## Forking
 
