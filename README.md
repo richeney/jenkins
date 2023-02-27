@@ -1,12 +1,10 @@
 # Jenkins on Azure VM deploying Terraform config
 
-Jenkins is a popular CI/CD tool. This example shows the creation of a Jenkins server with a service principal and both Azure CLI and Terraform installed.
+Jenkins is a popular CI/CD tool. This example shows the creation of a Jenkins server with a system assigned managed identity. Azure CLI and Terraform will also be installed. Jeknins is then configured to use the GitHub repo and its Jenkinsfile. The Jenkinsfile includes both Azure CLI and Terraform example steps in the pipeline.
 
 Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/azure/install-azure-cli), plus access to a valid subscription.
 
 The terraform config should create a resource group, *terraform-demo*, and an Azure Container Instance running the inspector gadget image, but this is purely to prove that your Terraform configuration can be deployed via Jenkins using a GitHub repo and a system assigned managed identity.
-
-The Jenkinsfile includes both Azure CLI and Terraform example steps.
 
 If you are prefer using service principals then check the companion [readme](SERVICE_PRINCIPAL.md).
 
