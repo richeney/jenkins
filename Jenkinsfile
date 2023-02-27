@@ -35,15 +35,10 @@ pipeline {
         stage('Terraform Init') {
             steps {
                 sh '''
-                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
-                // az account set --subscription $ARM_SUBSCRIPTION_ID
-
                 echo "Initialising Terraform"
                 terraform init \
                     --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
                     --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
-
-                // az logout
                 '''
             }
         }
