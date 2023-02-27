@@ -22,21 +22,25 @@ pipeline {
         stage('Info') {
             steps {
                 echo "Running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
+                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
+                az account set --subscription $ARM_SUBSCRIPTION_ID
+                az resource list --resource-group $ARM_BACKEND_RESOURCEGROUP --output table
+                az logout
             }
         }
 
         stage('Terraform Init') {
             steps {
                 sh '''
-                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
-                az account set --subscription $ARM_SUBSCRIPTION_ID
+                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
+                // az account set --subscription $ARM_SUBSCRIPTION_ID
 
                 echo "Initialising Terraform"
                 terraform init \
                     --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
                     --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
 
-                az logout
+                // az logout
                 '''
             }
         }
@@ -44,14 +48,14 @@ pipeline {
         stage('Terraform Validate') {
             steps {
                 sh '''
-                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
-                az account set --subscription $ARM_SUBSCRIPTION_ID --output none
+                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
+                // az account set --subscription $ARM_SUBSCRIPTION_ID --output none
 
                 echo "Validating Terraform"
                 terraform fmt -check
                 terraform validate
 
-                az logout
+                // az logout
                 '''
             }
         }
@@ -59,13 +63,13 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 sh '''
-                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
-                az account set --subscription $ARM_SUBSCRIPTION_ID --output none
+                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
+                // az account set --subscription $ARM_SUBSCRIPTION_ID --output none
 
                 echo "Validating Terraform"
                 terraform plan --input=false
 
-                az logout
+                // az logout
                 '''
             }
         }
@@ -81,13 +85,13 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 sh '''
-                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
-                az account set --subscription $ARM_SUBSCRIPTION_ID --output none
+                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
+                // az account set --subscription $ARM_SUBSCRIPTION_ID --output none
 
                 echo "Validating Terraform"
                 terraform apply --input=false --auto-approve
 
-                az logout
+                // az logout
                 '''
             }
         }
