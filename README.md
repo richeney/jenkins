@@ -368,6 +368,12 @@ Configure secrets in Azure Key Vault:
 
 * <https://github.com/Azure-Samples/jenkins-terraform-azure-example/blob/main/Create_Jenkins_Job.md>
 
+OpenID Connect between AAD and Jenkins plugin:
+
+* <https://plugins.jenkins.io/oidc-provider/>
+
+    Documented for AWS and GCP - missing Azure.
+
 Will also look at:
 
 * Using credentials to access a private GitHub repo
