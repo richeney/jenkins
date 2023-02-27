@@ -26,7 +26,10 @@ pipeline {
                 sh '''
                 az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
                 az account set --subscription $ARM_SUBSCRIPTION_ID
-                az resource list --resource-group $ARM_BACKEND_RESOURCEGROUP --output table
+                storageId=$(az storage account show --name $ARM_BACKEND_STORAGEACCOUNT \
+                  --resource-group $ARM_BACKEND_RESOURCEGROUP --query id --output tsv)
+                az role assignment list --include-inherited \
+                  --scope $storageId --query "[?contains(roleDefinitionName, 'Storage')]" --output jsonc
                 az logout
                 '''
             }
@@ -46,14 +49,9 @@ pipeline {
         stage('Terraform Validate') {
             steps {
                 sh '''
-                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
-                // az account set --subscription $ARM_SUBSCRIPTION_ID --output none
-
                 echo "Validating Terraform"
                 terraform fmt -check
                 terraform validate
-
-                // az logout
                 '''
             }
         }
@@ -61,13 +59,8 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 sh '''
-                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
-                // az account set --subscription $ARM_SUBSCRIPTION_ID --output none
-
                 echo "Validating Terraform"
                 terraform plan --input=false
-
-                // az logout
                 '''
             }
         }
@@ -83,13 +76,8 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 sh '''
-                // az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output none
-                // az account set --subscription $ARM_SUBSCRIPTION_ID --output none
-
                 echo "Validating Terraform"
                 terraform apply --input=false --auto-approve
-
-                // az logout
                 '''
             }
         }
