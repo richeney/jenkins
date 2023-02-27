@@ -61,7 +61,7 @@ The terraform config should create a resource group, *terraform-demo*, and an Az
     --admin-username "azureuser" \
     --generate-ssh-keys \
     --public-ip-sku Standard \
-    --custom-data cloud-init-jenkins-terraform-azurecli.txt \
+    --custom-data cloud-config.yaml \
     --assign-identity [system]
     ```
 
@@ -70,6 +70,34 @@ The terraform config should create a resource group, *terraform-demo*, and an Az
     ```bash
     az vm open-port --port 8080 --priority 1010 --name jenkins
     az vm open-port --port 8443 --priority 1020 --name jenkins
+    ```
+
+## Terraform remote state and identity RBAC
+
+1. Find the objectId for the managed identity
+
+    ```bash
+    managed_identity=$(az vm show --resource-group jenkins --name jenkins --query identity.principalId --output tsv)
+    ```
+
+1. Create a storage account and container for the Terraform remote state
+
+    ```bash
+    rgId=$(az group show --name $(az config get defaults.group --query value -otsv) --query id -otsv)
+    sa=terraform$(md5sum <<< $rgId | cut -c1-12)
+    az storage account create --name $sa --sku Standard_LRS --allow-blob-public-access false
+    az storage container create --name "tfstate" --account-name $sa --auth-mode login
+    ```
+
+    Uses md5sum to generate a predictable hash from the resource group's resource ID.
+
+1. Assign RBAC roles for the managed identity
+
+    ```bash
+    subscriptionId=/subscriptions/$(az account show --query id --output tsv)
+    saId=$(az storage account show --name $sa --query id --output tsv)
+    az role assignment create --assignee $managed_identity --role "Contributor" --scope $subscriptionId
+    az role assignment create --assignee $managed_identity --role "Storage Blob Data Contributor" --scope $saId
     ```
 
 ## SSH to your Jenkins server
@@ -97,6 +125,8 @@ The terraform config should create a resource group, *terraform-demo*, and an Az
     service jenkins status
     ```
 
+    `CTRL`+`C` to break.
+
 1. Display the Jenkins URL and unlock password
 
     ```bash
@@ -111,9 +141,12 @@ The terraform config should create a resource group, *terraform-demo*, and an Az
 
 1. Connect to the URL and paste in the initialAdminPassword
 
-1. Select initial plugins to install
+1. Select plugins to install
+1. Filter to *GitHub*
+1. Check *GitHub*
+1. *Install*
 
-    * GitHub
+    Getting Started will take a few minutes to run.
 
 1. Create First Admin User
 
@@ -128,20 +161,22 @@ The terraform config should create a resource group, *terraform-demo*, and an Az
 ## Configure Jenkins Plugins
 
 1. Manage Jenkins | System Configuration | Manage Plugins
-
     1. Click on *Available plugins*
-    1. Search on the following plug-ins in turn
+    1. Search for and check the following plug-ins
         * AnsiColor
-        * Azure Credentials
         * Terraform
-        * Azure Key Vault (optional)
         * Dark Theme (optional)
-
     1. Check and *Install without restart*
+
+        ![Installing additional Jenkins plugins](images/plugins.png)
 
 1. Restart Jenkins
 
-    Once they have all installed then restart Jenkins:
+    Once they have all installed then check the *Restart Jenkins* box.
+
+    ![Restarting Jenkins aftder successful install](images/restart.png)
+
+    Alternatively:
 
     * Browse to `http://<ip_address>:8080/restart`, or
     * Run `sudo service jenkins restart`
@@ -163,7 +198,7 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 1. *Add Terraform*
     1. Name = **terraform**
 
-        For information, the name must match the second field in the Jenkinsfile tools block:
+        For information, the name matches the second field in the Jenkinsfile tools block:
 
         ```go
         tools {
@@ -179,93 +214,24 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 
 ## Credential
 
-1. Create a service principal
-
-    ```bash
-    az ad sp create-for-rbac --name http://jenkins_terraform_sp --output jsonc
-    ```
-
-1. Get the service principal's object ID
-
-    ```bash
-    objectId=$(az ad sp list --filter "displayname eq 'http://jenkins_terraform_sp'" --query [0].id -otsv)
-    ```
-
-1. Create Owner RBAC role assignment on the subscription
-
-    ```bash
-    subscriptionId=/subscriptions/$(az account show --query id -otsv)
-    az role assignment create --assignee $objectId --role "Contributor" --scope $subscriptionId
-    ```
-
-1. Display the subscription ID
-
-    ```bash
-    az account show --query id --output tsv
-    ```
-
-1. Recreate the service principal
-
-    This will patch it, resetting the password.
-
-    ```bash
-    az ad sp create-for-rbac --name http://jenkins_terraform_sp --output jsonc
-    ```
-
-1. Manage Jenkins | Manage Credentials
-1. Click on *System*
-1. Click on *Global credentials*
-1. *+ Add Credentials*
-    * Kind = **Azure Service Principal**
-    * **Subscription ID**
-    * **Client ID** (appId)
-    * **Client Secret** (password)
-    * **Tenant ID**
-    * Id = **jenkins_terraform_sp**
-    * Description = **ht<span>tp://</span>jenkins_terraform_sp**
-1. *Verify Service Principal*
-
-    ![Adding a Service Principal in Jenkins](images/service_principal.png)
-
-    If there are any issues then try to authenticate using `az login --service-principal`.
-
-1. *Create*
-
-## Remote state
-
-1. Create a storage account and container for the Terraform remote state
+1. Display values for secrets
 
     ```bash
     rgId=$(az group show --name $(az config get defaults.group --query value -otsv) --query id -otsv)
     sa=terraform$(md5sum <<< $rgId | cut -c1-12)
-    az storage account create --name $sa --sku Standard_LRS --allow-blob-public-access false
-    az storage container create --name "tfstate" --account-name $sa --auth-mode login
-    ```
-
-    Uses md5sum to generate a predictable hash from the resource group's resource ID.
-
-1. Add Storage Blob Data Contributor RBAC role assignment
-
-    ```bash
-    saId=$(az storage account show --name $sa --query id -otsv)
-    az role assignment create --assignee $objectId --role "Storage Blob Data Contributor" --scope $saId
-    ```
-
-1. Display resource group name and storage account name
-
-    ```bash
-    az storage account show --name $sa --query "{resource_group:resourceGroup, storage_account:name}" --output yaml
+    az account show --query "{tenant_id:tenantId, subscription_id:id}" --output yamlc
+    az storage account show --name $sa --query "{resource_group:resourceGroup, storage_account:name}" --output yamlc
     ```
 
 1. Manage Jenkins | Manage Credentials
 1. *System*, *Global credentials*, *+ Add Credentials*
 1. Kind = **Secret text**
 
-    Create two credentials, for **resource_group** and **storage_account**.
+    Create credentials for **tenant_id**, **subscription_id**, **resource_group** and **storage_account**, setting *secret* to the values shown by the commands above.
 
     ![Adding additional secrets in Jenkins](images/secret.png)
 
-    These will be used later by `terraform init` for the backend.
+    The Jenkinsfile maps the credentials to environment variables.
 
 ## Configure a pipeline
 
@@ -273,7 +239,7 @@ Jenkins can install tools (binaries, etc) on the fly with automatic installers. 
 
 On the Jenkins dashboard:
 
-1. *+ New Item+
+1. *+ New Item*
 1. Select *Pipeline"
 1. Enter an item name
 

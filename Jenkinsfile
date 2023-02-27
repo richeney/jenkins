@@ -6,11 +6,11 @@ pipeline {
     }
 
     environment {
-        TF_IN_AUTOMATION = 'true'
-        ARM = credentials('jenkins_terraform_sp')
-        // Exports env vars: ARM_CLIENT_ID, ARM_CLIENT_SECRET, ARM_SUBSCRIPTION_ID, ARM_TENANT_ID
-        // which is the same as those used by Terraform
-        ARM_BACKEND_RESOURCEGROUP = credentials('resource_group')
+        TF_IN_AUTOMATION           = 'true'
+        ARM_USE_MSI                = true
+        ARM_TENANT_ID              = credentials('tenant_id')
+        ARM_SUBSCRIPTION_ID        = credentials('subscription_id')
+        ARM_BACKEND_RESOURCEGROUP  = credentials('resource_group')
         ARM_BACKEND_STORAGEACCOUNT = credentials('storage_account')
     }
 
@@ -24,7 +24,7 @@ pipeline {
                 echo "Running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
 
                 sh '''
-                az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
+                az login --identity --output jsonc
                 az account set --subscription $ARM_SUBSCRIPTION_ID
                 storageId=$(az storage account show --name $ARM_BACKEND_STORAGEACCOUNT \
                   --resource-group $ARM_BACKEND_RESOURCEGROUP --query id --output tsv)
@@ -59,7 +59,7 @@ pipeline {
         stage('Terraform Plan') {
             steps {
                 sh '''
-                echo "Validating Terraform"
+                echo "Terraform Plan"
                 terraform plan --input=false
                 '''
             }
@@ -76,7 +76,7 @@ pipeline {
         stage('Terraform Apply') {
             steps {
                 sh '''
-                echo "Validating Terraform"
+                echo "Terraform Apply"
                 terraform apply --input=false --auto-approve
                 '''
             }
