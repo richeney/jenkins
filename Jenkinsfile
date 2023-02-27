@@ -22,10 +22,13 @@ pipeline {
         stage('Info') {
             steps {
                 echo "Running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
+
+                sh '''
                 az login --service-principal -u $ARM_CLIENT_ID -p $ARM_CLIENT_SECRET -t $ARM_TENANT_ID --output jsonc
                 az account set --subscription $ARM_SUBSCRIPTION_ID
                 az resource list --resource-group $ARM_BACKEND_RESOURCEGROUP --output table
                 az logout
+                '''
             }
         }
 
