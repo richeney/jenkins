@@ -23,6 +23,12 @@ pipeline {
             steps {
                 echo "Running ${env.JOB_NAME} (${env.BUILD_ID}) on ${env.JENKINS_URL}."
 
+                echo "Terraform version:"
+                sh 'terraform -version'
+
+                echo "Azure CLI version"
+                sh "az version --output jsonc"
+
                 sh '''
                 az login --identity --output jsonc
                 az account set --subscription $ARM_SUBSCRIPTION_ID
@@ -40,6 +46,7 @@ pipeline {
                 sh '''
                 echo "Initialising Terraform"
                 terraform init \
+                    --upgrade \
                     --backend-config="resource_group_name=$ARM_BACKEND_RESOURCEGROUP" \
                     --backend-config="storage_account_name=$ARM_BACKEND_STORAGEACCOUNT"
                 '''
