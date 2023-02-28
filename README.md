@@ -6,7 +6,7 @@ Assumes a Bash environment with the [Azure CLI](https://learn.microsoft.com/cli/
 
 The terraform config should create a resource group, *terraform-demo*, and an Azure Container Instance running the inspector gadget image, but this is purely to prove that your Terraform configuration can be deployed via Jenkins using a GitHub repo and a system assigned managed identity.
 
-If you are prefer using service principals then check the companion [readme](SERVICE_PRINCIPAL.md).
+If you are prefer using service principals then check the companion [Service Principal readme](markdown/service_principal.md).
 
 ## Forking
 
@@ -71,11 +71,11 @@ Before you start, fork this repo so that you have your own.
     --assign-identity [system]
     ```
 
-1. Open port 8080 and 8443 on the NSG
+1. Open port 8080 and 443 on the NSG
 
     ```bash
     az vm open-port --port 8080 --priority 1010 --name jenkins
-    az vm open-port --port 8443 --priority 1020 --name jenkins
+    az vm open-port --port 443 --priority 1020 --name jenkins
     ```
 
 ## Terraform remote state and identity RBAC
@@ -332,7 +332,9 @@ Feel free to locally clone your repo, make a change to the Jenkinsfile or Terraf
 
 ## Next
 
-On the next page you will use the Azure CLI and the Cloud Shell to pull down an image into the container registry and you'll also create a virtual network.
+OK, it is working. Want to harden it a little?
+
+* [Configure HTTPS](markdown/configuring_https.md)
 
 ## Resources
 

@@ -9,9 +9,3 @@ variable "location" {
   type        = string
   default     = "West Europe"
 }
-
-variable "container_group_name" {
-  description = "Name of the container group"
-  type        = string
-  default     = "inspector-gadget"
-}

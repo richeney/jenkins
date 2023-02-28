@@ -56,7 +56,7 @@ Assumes you have followed the main README.md up to the point where you have conf
     * Description = **ht<span>tp://</span>jenkins_terraform_sp**
 1. *Verify Service Principal*
 
-    ![Adding a Service Principal in Jenkins](images/service_principal.png)
+    ![Adding a Service Principal in Jenkins](../images/service_principal.png)
 
     If there are any issues then try to authenticate using `az login --service-principal`.
 
@@ -94,7 +94,7 @@ Assumes you have followed the main README.md up to the point where you have conf
 
     Create two credentials, for **resource_group** and **storage_account**.
 
-    ![Adding additional secrets in Jenkins](images/secret.png)
+    ![Adding additional secrets in Jenkins](../images/secret.png)
 
     These will be used later by `terraform init` for the backend.
 
