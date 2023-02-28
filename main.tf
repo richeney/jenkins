@@ -37,7 +37,7 @@ resource "azurerm_container_app" "example" {
       name   = "inspectorgadget"
       image  = "jelledruyts/inspectorgadget:latest"
       cpu    = 0.5
-      memory = "1.0Gi"
+      memory = "1Gi"
 
       env {
         name  = "AZURE_LOCATION"
