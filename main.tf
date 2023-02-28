@@ -7,23 +7,47 @@ resource "azurerm_resource_group" "example" {
   location = var.location
 }
 
-resource "azurerm_container_group" "example" {
-  name                = var.container_group_name
+resource "azurerm_log_analytics_workspace" "example" {
+  name                = "example-workspace"
   location            = azurerm_resource_group.example.location
   resource_group_name = azurerm_resource_group.example.name
-  ip_address_type     = "Public"
-  dns_name_label      = replace("${var.container_group_name}-${local.uniq}", "_", "-")
-  os_type             = "Linux"
+  sku                 = "Free"
+  retention_in_days   = 7
+}
 
-  container {
-    name   = "inspectorgadget"
-    image  = "jelledruyts/inspectorgadget:latest"
-    cpu    = "0.5"
-    memory = "1.0"
+resource "azurerm_container_app_environment" "example" {
+  name                       = "example-environment"
+  location                   = azurerm_resource_group.example.location
+  resource_group_name        = azurerm_resource_group.example.name
+  log_analytics_workspace_id = azurerm_log_analytics_workspace.example.id
+}
 
-    ports {
-      port     = 80
-      protocol = "TCP"
+resource "azurerm_container_app" "example" {
+  name                         = "example-app"
+  container_app_environment_id = azurerm_container_app_environment.example.id
+  resource_group_name          = azurerm_resource_group.example.name
+  revision_mode                = "Single"
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  template {
+    container {
+      name   = "inspectorgadget"
+      image  = "jelledruyts/inspectorgadget:latest"
+      cpu    = 0.5
+      memory = "1.0Gi"
+
+      env {
+        name  = "AZURE_LOCATION"
+        value = azurerm_container_app_environment.example.location
+      }
+
+      env {
+        name  = "AZURE_RESOURCE_GROUP"
+        value = azurerm_container_app_environment.example.name
+      }
     }
   }
 }
