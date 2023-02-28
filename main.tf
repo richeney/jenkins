@@ -32,6 +32,11 @@ resource "azurerm_container_app" "example" {
     type = "SystemAssigned"
   }
 
+  ingress {
+    external_enabled = true
+    target_port      = 80
+  }
+
   template {
     container {
       name   = "inspectorgadget"
